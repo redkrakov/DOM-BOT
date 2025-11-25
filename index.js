@@ -428,3 +428,53 @@ async function start() {
 }
 
 start().catch(e=>console.error("start error:", e));
+// =============================
+//   SISTEMA DE LOGIN DUPLO
+//   QR CODE OU CÓDIGO DE PARING
+// =============================
+
+import readline from "readline";
+
+async function startConnectionWithChoice() {
+    console.log("\n📲 Escolha o modo de conexão:");
+    console.log("1 - Conectar via QR Code");
+    console.log("2 - Conectar via Código de 8 dígitos");
+
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    rl.question("\nDigite 1 ou 2: ", async (opt) => {
+        rl.close();
+
+        if (opt === "1") {
+            console.log("\n🔗 Conectando via QR Code...");
+            start(); // usa o método normal do seu bot
+        }
+
+        else if (opt === "2") {
+            console.log("\n🔗 Conectando via Código numérico (Pairing Code)…");
+
+            const { state, saveCreds } = await useMultiFileAuthState(SESSION_FOLDER);
+
+            const sock = makeWASocket({
+                auth: state,
+                printQRInTerminal: false, 
+            });
+
+            sock.ev.on("creds.update", saveCreds);
+
+            const code = await sock.requestPairingCode(OWNER_NUMBER.replace("@s.whatsapp.net",""));
+            console.log("\nDigite este código no WhatsApp:");
+            console.log(`\n🔢 Código: ${code}\n`);
+        }
+
+        else {
+            console.log("\n❌ Opção inválida. Execute novamente: node index.js");
+        }
+    });
+}
+
+// ===== INÍCIO REAL DO BOT =====
+startConnectionWithChoice();
